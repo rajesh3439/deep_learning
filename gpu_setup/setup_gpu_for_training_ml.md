@@ -21,7 +21,8 @@ NVIDIA provides libraries to leverage the power of GPUs for training ML models. 
 2) Install WSL (If not done before. Open PowerShell and use `wsl --install -d Ubuntu-22.04`)
 3) **Install CUDA-Toolkit** :
 	* Remove old GPG key:
-			`sudo apt-key del 7fa2af80`
+			
+            `sudo apt-key del 7fa2af80`
 	* Execute below commands to install cuda-toolkit 
         ```shell
         wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
@@ -44,12 +45,15 @@ NVIDIA provides libraries to leverage the power of GPUs for training ML models. 
 	* To verify installation run `nvcc -V`. It shows cuda-toolkit version. 
 	* **Reference** [Official guide for installing cuda-toolkit](https://docs.nvidia.com/cuda/wsl-user-guide/index.html#:~:text=However%2C%20CUDA%20application%20development%20is,CUDA%20Toolkit%20for%20x86%20Linux), [Cuda-toolkit 11.8 package](https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local)
 
-5) **Install CUDNN** 
-	- Install dependencies `sudo apt-get install zlib1g`
+4) **Install CUDNN** 
+	- Install dependencies 
+    
+        `sudo apt-get install zlib1g`
 	- To download cudnn from NVIDIA, you need to setup an account and sign-in to [NVIDIA]([NVIDIA Developer](https://developer.nvidia.com/)).
 	- Download the CUDNN [installer archive](https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-8.7.0.84_cuda11-archive.tar.xz), this download the file in your windows. Move it to linux filesystem.
 	- Extract the archive 
-		`tar xvf cudnn-linux-x86_64-8.7.0.84_cuda11-archive.tar.xz`
+		
+        `tar xvf cudnn-linux-x86_64-8.7.0.84_cuda11-archive.tar.xz`
 	- cd into the extracted folder
 	- Copy libraries to cuda installation
 		```shell
@@ -58,48 +62,68 @@ NVIDIA provides libraries to leverage the power of GPUs for training ML models. 
 		```
 	- Verify cudnn installation:
 		- Install cudnn-samples 
-			`sudo apt-get -y install libcudnn9-samples`
+			
+            `sudo apt-get -y install libcudnn9-samples`
 		- Copy samples to writable path for compiling
-			`cp -r /usr/src/cudnn_samples_v9/ $HOME`
+			
+            `cp -r /usr/src/cudnn_samples_v9/ $HOME`
 		- cd into mnist
-			`cd  $HOME/cudnn_samples_v9/mnistCUDNN`
+			
+            `cd  $HOME/cudnn_samples_v9/mnistCUDNN`
 		- Compile
-			`$make clean && make`
+			
+            `$make clean && make`
 		- Run
-			`./mnistCUDNN`
-			If cudNN is properly installed and running you will see `Test Passed` message.
+			
+            `./mnistCUDNN`
+			
+            If cudNN is properly installed and running you will see `Test Passed` message.
 	- Reference : [cudNN Installation guide](https://docs.nvidia.com/deeplearning/cudnn/archives/cudnn-870/install-guide/index.html)
 
-7) **Install Tensorflow** ![[Pasted image 20240523193309.png]]
+5) **Install Tensorflow** 
 	- Install tensor flow 2.14.0
 			`pip install tensorflow[and-cuda]==2.14.0`
 	- This installs all dependencies including keras, tensorRT all other dependencies. [Reference](https://www.tensorflow.org/install/pip#windows-wsl2)
 	- Check tensor flow is able to detect GPU. Run the following command from terminal.
 		`python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"`
 
-1) **Install Pytorch**![[Pasted image 20240523193240.png]]
+6) **Install Pytorch**
 	* Install Pytorch 2.1.0 
 		`pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118`
 	* [Reference to installation of PyTorch](https://pytorch.org/get-started/previous-versions/#linux-and-windows-11)
 	* Check Pytorch is detecting the gpus
-```python
->>> import torch
->>> torch.cuda.is_available()
-True
+        ```python
+        >>> import torch
+        >>> torch.cuda.is_available()
+        True
 
->>> torch.cuda.device_count()
-1
+        >>> torch.cuda.device_count()
+        1
 
->>> torch.cuda.current_device()
-0
+        >>> torch.cuda.current_device()
+        0
 
->>> torch.cuda.device(0)
-<torch.cuda.device at 0x7efce0b03be0>
+        >>> torch.cuda.device(0)
+        <torch.cuda.device at 0x7efce0b03be0>
 
->>> torch.cuda.get_device_name(0)
-'GeForce GTX A3000'
-```
-[Ref: Basic Checks for Pytorch](https://stackoverflow.com/questions/48152674/how-do-i-check-if-pytorch-is-using-the-gpu)
+        >>> torch.cuda.get_device_name(0)
+        'GeForce GTX A3000'
+        ```
+    - [Ref: Basic Checks for Pytorch](https://stackoverflow.com/questions/
+    48152674/how-do-i-check-if-pytorch-is-using-the-gpu)
+7) **Install nvitop** utility to monitor GPU usage
+    - This utility is available as python package that runs in both windows and linux.
+
+        `pip install --upgrade nvitop`
+    - Run nvitop from python
+
+        `pyhon3 -m nvitop`
+    - To run directly from terminal, add `${HOME}/.local/bin` to `PATH` environment variable. It is a good practice to add the command to .bashrc file
+
+        `export PATH=${HOME}/.local/bin:${PATH}`
+    - [Reference to installation steps](https://github.com/XuehaiPan/nvitop?tab=readme-ov-file#installation)
+
+## 
 
 ## Helpful Links
 - [Instructions for cuda 11.8 installation in Ubuntu 22.04](https://gist.github.com/Mahedi-61/2a2f1579d4271717d421065168ce6a73)
