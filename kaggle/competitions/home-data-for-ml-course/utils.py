@@ -1,8 +1,13 @@
 import pandas as pd
-from typing import List
+from typing import List, Tuple
+
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
 def sep_columns_from_desc(filename:str='data_description.txt', 
-                          data_cols:List=None)->(List, List):
+                          data_cols:List=None)->Tuple[List, List]:
     """
     Separates the columns in the data_description.txt file into
     categorical and numerical columns
@@ -27,7 +32,7 @@ def sep_columns_from_desc(filename:str='data_description.txt',
 
     line_spaces = 0
 
-    with open('data_description.txt') as f:
+    with open(filename) as f:
         line = f.readline()
         col = line.split(':')[0] if ':' in line else None
         line = f.readline()
@@ -83,3 +88,35 @@ def missing_values_by_col(df:pd.DataFrame)->pd.DataFrame:
     .query('missing_values > 0')\
     .pipe(lambda x: x.assign(percentage_missing = x.missing_values / df.shape[0] * 100))\
     .reset_index()
+
+
+# preprocessing for categorical and numerical data
+def data_preprocessor(cat_cols:List, num_cols:List)->ColumnTransformer:
+    """
+    Preprocess the data
+
+    Args:
+    cat_cols: list of categorical columns
+    num_cols: list of numerical columns
+
+    Returns:
+    ColumnTransformer object
+    """
+
+    catergorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value='None')),
+        ('ordinal', OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1))
+    ])
+
+    numerical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+
+    # combine preprocessing steps
+    preprocessor = ColumnTransformer( transformers=[
+            ('num', numerical_transformer, num_cols),
+            ('cat', catergorical_transformer, cat_cols)
+        ])
+    
+    return preprocessor

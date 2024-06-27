@@ -1,3 +1,6 @@
 # Ignore Installers & cudnn_samples
 gpu_setup/installers/*
 gpu_setup/cudnn_samples/*
+
+# Ignore _pycache_ directories
+**/__pycache__/*
