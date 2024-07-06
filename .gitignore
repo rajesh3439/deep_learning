@@ -4,3 +4,6 @@ gpu_setup/cudnn_samples/*
 
 # Ignore _pycache_ directories
 **/__pycache__/*
+
+# Ignore .csv files
+*.csv
