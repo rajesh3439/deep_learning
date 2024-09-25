@@ -1,3 +1,19 @@
+# -----------------------------------------------------------------------------
+# This script trains a supervised autoencoder model on the building fault
+# detection dataset.
+# The architecture of the model is as follows:
+# 1. Encoder: 4 layers, each with ReLU activation
+# 2. Decoder: 3 layers, each with ReLU activation
+# 3. Classifier: 1 layer with softmax activation
+# The model is trained using the Adam optimizer
+#
+# The architecture is based on the following paper:
+# A data driven fault detection and diagnosis scheme for air handling units
+# in building HVAC systems considering undefined states
+# https://doi.org/10.1016/j.jobe.2020.102111
+# -----------------------------------------------------------------------------
+
+
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
@@ -13,6 +29,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 from datetime import datetime
 import argparse
+
 
 # Create dataset for training autoencoder
 class BuildingDataset(Dataset):
@@ -37,21 +54,21 @@ class SupervisedAutoEncoder(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, int(hidden_size/2)),
+            nn.Linear(hidden_size, int(hidden_size / 2)),
             nn.ReLU(),
-            nn.Linear(int(hidden_size/2), int(hidden_size/3)),
+            nn.Linear(int(hidden_size / 2), int(hidden_size / 3)),
             nn.ReLU(),
         )
         self.decoder = nn.Sequential(
-            nn.Linear(int(hidden_size/3), int(hidden_size/2)),
+            nn.Linear(int(hidden_size / 3), int(hidden_size / 2)),
             nn.ReLU(),
-            nn.Linear(int(hidden_size/2), hidden_size),
+            nn.Linear(int(hidden_size / 2), hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, input_size),
             nn.ReLU(),
-            )
+        )
         self.classifer = nn.Sequential(
-            nn.Linear(int(hidden_size/3), nlabels),
+            nn.Linear(int(hidden_size / 3), nlabels),
             # nn.Softmax()
         )
 
@@ -130,12 +147,13 @@ def eval_metrics(y_true, y_pred):
     #     y_true, y_pred, average="micro"
     # )
     from sklearn.metrics import (
-    # confusion_matrix,
-    # accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score)
-    
+        # confusion_matrix,
+        # accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score,
+    )
+
     precision = precision_score(y_true, y_pred, average="micro")
     recall = recall_score(y_true, y_pred, average="micro")
     f1 = f1_score(y_true, y_pred, average="micro")
@@ -173,11 +191,10 @@ def train_model(
         val_loss = running_vloss / len(valid_dataloader)
         val_class_loss = running_vclass_loss / len(valid_dataloader)
         tot_val_loss = val_loss + val_class_loss
-        val_losses.append((val_loss,val_class_loss))
+        val_losses.append((val_loss, val_class_loss))
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\t\
             Epoch {epoch+1}/{num_epochs}, Train Loss: {total_loss:.4f},\
-                    Val Loss: {tot_val_loss:.4f}"
-        )
+                    Val Loss: {tot_val_loss:.4f}")
         if early_stopping is not None:
             if early_stopping(tot_val_loss):
                 print("Early Stopping")
@@ -292,32 +309,36 @@ def create_model(input_size: int, hidden_size: int, nlabels: int, dropout: float
         device=device,
     )
     supervised_ae.to(device)
-    optimizer = optim.Adam(supervised_ae.parameters(), lr=0.001
-                        , betas=(0.9,0.999), weight_decay=0.01)
+    optimizer = optim.Adam(
+        supervised_ae.parameters(), lr=0.001, betas=(0.9, 0.999), weight_decay=0.01
+    )
     # optimizer = optim.SGD(supervised_ae.parameters(), lr=0.01, momentum=0.9)
     print(supervised_ae)
 
     return supervised_ae, optimizer, device
+
 
 def select_device():
     # automate device selection
     device = None
     if torch.cuda.is_available():
         device = torch.device(f"cuda:{torch.cuda.current_device()}")
-        print(f'Using GPU: {torch.cuda.get_device_name()}')
+        print(f"Using GPU: {torch.cuda.get_device_name()}")
     else:
         device = torch.device("cpu")
-        print('Using CPU')
+        print("Using CPU")
     return device
 
+
 def plot_loss(train_losses, valid_losses):
-    plt.plot(range(len(train_losses)),train_losses)
-    plt.plot(range(len(valid_losses)),valid_losses)
-    plt.xlabel('epochs')
-    plt.ylabel('loss')
-    plt.legend(['Train Loss', 'Validation Loss'])
-    plt.savefig('loss_plot.png')
+    plt.plot(range(len(train_losses)), train_losses)
+    plt.plot(range(len(valid_losses)), valid_losses)
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
+    plt.legend(["Train Loss", "Validation Loss"])
+    plt.savefig("loss_plot.png")
     # plt.show()
+
 
 def predict(model, test_loader):
     y_true = []
@@ -335,15 +356,17 @@ def predict(model, test_loader):
             x_pred.append(x_hat.cpu().numpy())
     return x_true, x_pred, y_true, y_pred
 
+
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
 
 def main():
     p = argparse.ArgumentParser()
@@ -396,7 +419,7 @@ def main():
             valid_loader,
             optimizer,
             num_epochs=500,
-            early_stopping= EarlyStopping(patience=50, delta=0.001),
+            early_stopping=EarlyStopping(patience=50, delta=0.001),
         )
         print(f"Best epoch: {best_epoch}, Best Validation Loss: {best_val_loss}")
 
@@ -407,22 +430,24 @@ def main():
         print("Saving model to sae_model.pth")
         torch.save(best_model, "sae_model.pth")
 
-    # load best model    
+    # load best model
     print("Loading model from sae_model.pth")
     supervised_ae.load_state_dict(torch.load("sae_model.pth"))
-    
+
     # evaluate model
     x_true, x_pred, y_true, y_pred = predict(supervised_ae, valid_loader)
 
     # confusion matrix
     from sklearn.metrics import confusion_matrix
+
     print("Confusion Matrix")
     print(confusion_matrix(y_true, y_pred))
 
     # calculate metrics
     precision, recall, f1 = eval_metrics(y_true, y_pred)
     print(f"Accuracy: {np.mean(np.array(y_true) == np.array(y_pred))}")
-    print(f"Precision: {precision}, Recall: {recall}, F1: {f1}")    
+    print(f"Precision: {precision}, Recall: {recall}, F1: {f1}")
+
 
 if __name__ == "__main__":
     main()
