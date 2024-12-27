@@ -5,5 +5,9 @@ gpu_setup/cudnn_samples/*
 # Ignore _pycache_ directories
 **/__pycache__/*
 
+# Ignore python virtual environment
+# assign/avathon/myenv/*
+**/myenv/*
+
 # Ignore .csv files
 *.csv
