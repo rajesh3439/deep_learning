@@ -11,3 +11,6 @@ gpu_setup/cudnn_samples/*
 
 # Ignore .csv files
 *.csv
+
+# Ignore data in learn directory
+learn/data/
