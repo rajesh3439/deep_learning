@@ -9,6 +9,9 @@ gpu_setup/cudnn_samples/*
 # assign/avathon/myenv/*
 **/myenv/*
 
+# Ignore .env file
+.env
+
 # Ignore .csv files
 *.csv
 
