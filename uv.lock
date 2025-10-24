@@ -346,12 +346,14 @@ dependencies = [
     { name = "flatbuffers" },
     { name = "fonttools" },
     { name = "fsspec" },
+    { name = "future" },
     { name = "gast" },
     { name = "google-pasta" },
     { name = "graphviz" },
     { name = "grpcio" },
     { name = "h5py" },
     { name = "idna" },
+    { name = "imageio" },
     { name = "ipykernel" },
     { name = "ipython" },
     { name = "ipython-pygments-lexers" },
@@ -442,12 +444,14 @@ requires-dist = [
     { name = "flatbuffers", specifier = "==25.2.10" },
     { name = "fonttools", specifier = "==4.58.0" },
     { name = "fsspec", specifier = "==2025.3.2" },
+    { name = "future", specifier = ">=1.0.0" },
     { name = "gast", specifier = "==0.6.0" },
     { name = "google-pasta", specifier = "==0.2.0" },
     { name = "graphviz", specifier = ">=0.21" },
     { name = "grpcio", specifier = "==1.71.0" },
     { name = "h5py", specifier = "==3.13.0" },
     { name = "idna", specifier = "==3.10" },
+    { name = "imageio", specifier = ">=2.37.0" },
     { name = "ipykernel", specifier = "==6.29.5" },
     { name = "ipython", specifier = "==9.2.0" },
     { name = "ipython-pygments-lexers", specifier = "==1.1.1" },
@@ -661,6 +665,15 @@ wheels = [
 ]
 
 [[package]]
+name = "future"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/b2/4140c69c6a66432916b26158687e821ba631a4c9273c474343badf84d3ba/future-1.0.0.tar.gz", hash = "sha256:bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05", size = 1228490 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl", hash = "sha256:929292d34f5872e70396626ef385ec22355a1fae8ad29e1a734c3e43f9fbc216", size = 491326 },
+]
+
+[[package]]
 name = "gast"
 version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -816,6 +829,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f1/70/7703c29685631f5a7590aa73f1f1d3fa9a380e654b86af429e0934a32f7d/idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9", size = 190490 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/76/c6/c88e154df9c4e1a2a66ccf0005a88dfb2650c1dffb6f5ce603dfbd452ce3/idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3", size = 70442 },
+]
+
+[[package]]
+name = "imageio"
+version = "2.37.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0c/47/57e897fb7094afb2d26e8b2e4af9a45c7cf1a405acdeeca001fdf2c98501/imageio-2.37.0.tar.gz", hash = "sha256:71b57b3669666272c818497aebba2b4c5f20d5b37c81720e5e1a56d59c492996", size = 389963 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/bd/b394387b598ed84d8d0fa90611a90bee0adc2021820ad5729f7ced74a8e2/imageio-2.37.0-py3-none-any.whl", hash = "sha256:11efa15b87bc7871b61590326b2d635439acc321cf7f8ce996f812543ce10eed", size = 315796 },
 ]
 
 [[package]]

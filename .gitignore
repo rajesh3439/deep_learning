@@ -15,5 +15,10 @@ gpu_setup/cudnn_samples/*
 # Ignore .csv files
 *.csv
 
+# other files
+.DS_Store
+
 # Ignore data in learn directory
 learn/data/
+learn/cs231n/assignment1/cs231n/datasets/cifar-10-batches-py/
+learn/cs231n/assignment1/cs231n/datasets/imagenet_val_25.npz
