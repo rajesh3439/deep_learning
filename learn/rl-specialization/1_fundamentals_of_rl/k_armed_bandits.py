@@ -1,29 +1,50 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
+_NBANDITS = 10 # number of bandit machines
+_ROOT_SEED = 39 # for repeatability
+
 class KArmedBandits:
     """
     The model class to generate the armed bandits
     """
-    def __init__(self, n_arms:int=10, stationary:bool = True, seed=None) -> None:
+    def __init__(self, n_arms:int=10, stationary:bool=True, seed:int=None, steps:int=None) -> None:
         self.K = n_arms
         self.rng = np.random.default_rng(seed)
+        self.is_stationary = stationary
+        self.sim_steps = steps 
         self.reset()
     
     def reset(self):
-        self.q_bandits = self.rng.standard_normal(self.K)
+        self.q_bandits = self.rng.standard_normal(self.K) 
         self.optimal_action = np.argmax(self.q_bandits)
-    
-    def play_all(self):
-        """Simulates arm-pull action and outputs reward on each k machines one time"""
-        return self.rng.normal(loc=self.q_bandits, scale=1)
 
-    def play_select(self, ids: int | list[int]):
+        if not self.is_stationary: 
+            self.q_bandits = np.zeros(self.K) # start at 0 rewards and take random-walk each step
+            self.q_history = np.zeros((self.sim_steps, self.K)) # record_store for q*
+            self.optimal_action = np.zeros(self.sim_steps) # record optimal action at time-step
+
+    def noise(self):
+        """ Gernerates random noise for each K-bandit machine"""
+        return self.rng.normal(loc=0, scale=0.01, size=self.K)
+
+    def play_select(self, ids: int | list[int], step:int):
         """Simulates arm-pull action and outputs reward for the given machine ids"""
-        return self.rng.normal(loc=self.q_bandits[ids], scale=1)
+        if not self.is_stationary: 
+            # take a random walk before the reward At the very first time step, 
+            # you start with a random walk and a selected nation instead of zero.
+            # This helps with the loop and keeping track of optimal actions per time_step
+            self.q_bandits += self.noise() # add IID noise to each K bandits
+            # record the q* and optimal action
+            self.q_history[step] = self.q_bandits
+            self.optimal_action[step] = np.argmax(self.q_bandits)
+
+        res = self.rng.normal(loc=self.q_bandits[ids], scale=1)
+
+        return res 
 
 
-def run_simple_bandit(bandits:KArmedBandits, steps:int, eps:float=0.01, seed:int=None): 
+def run_simple_bandit(bandits:KArmedBandits, steps:int, eps:float=0.01, alpha:float=None, seed:int=None): 
     """
     Epsilon Greedy algorithm with the incremental update for the reward
     
@@ -49,9 +70,10 @@ def run_simple_bandit(bandits:KArmedBandits, steps:int, eps:float=0.01, seed:int
         else: 
             A = np.argmax(Q) # exploit
 
-        R = bandits.play_select(A)
+        R = bandits.play_select(A, i)
         N[A] = N[A] + 1 # Increment the select count
-        Q[A] = Q[A] + (1/N[A] * (R - Q[A]))
+        step_size = 1/N[A] if alpha is None else alpha
+        Q[A] = Q[A] + (step_size * (R - Q[A]))
 
         rewards[i] = R
         actions[i] = A
@@ -67,13 +89,13 @@ def print_q_table(k, q, Q):
     print(f"best arm: actual={np.argmax(q)}, estimated={np.argmax(Q)}, mae={np.abs(q-Q).sum()/Q.shape[0]}")
 
 
-def plot_fig22(mean_rewards, mean_opt_actions, labels, title="", path=None):
+def plot_fig22(results: dict, title="", path=None):
     """
-    Replicates Fig 2.2: average reward and % optimal action vs steps.
-    mean_rewards, mean_opt_actions: shape (n_methods, steps). labels: one per method.
+    Fig 2.2 style plot: average reward (top) and % optimal action (bottom) vs steps.
+    results: {label: (mean_rewards_1d, mean_opt_actions_1d)}, one curve per label.
     """
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
-    for r, o, lbl in zip(mean_rewards, mean_opt_actions, labels):
+    for lbl, (r, o) in results.items():
         ax1.plot(r, lw=1, label=lbl)
         ax2.plot(o * 100, lw=1, label=lbl)
     ax1.set_ylabel("Average reward")
@@ -84,14 +106,48 @@ def plot_fig22(mean_rewards, mean_opt_actions, labels, title="", path=None):
     fig.suptitle(title)
     fig.tight_layout()
     if path:
-        fig.savefig(path, dpi=120)
+        fig.savefig(path if path.endswith(".png") else path + ".png", dpi=120)
     plt.show()
 
+# def ten_armbandits_testbed(nruns:int, nsteps:int=1000, epsilons:list=[0,0.1,0.01], stationary=True):
+def ten_armbandits_testbed(run_configs:dict):
+    """ 
+    Run the epsilon greedy method for each `epsilon` value for `nsteps` and `nruns` 
+    times and plot average rewards & avg. optimal actions across each runs
+    """
+    print("Starting simulation runs for each config")
+    results = {}
+
+    for exp_key, exp_config in run_configs.items():
+        nsteps = exp_config.get("steps", 1000)
+        nruns = exp_config.get("runs",2000)
+        epsilons = exp_config.get("epsilons", [0,0.1,0.01])
+        stationary= exp_config.get("stationary", True)
+        method = exp_config.get("method", "sampled_average")
+
+        mean_rewards = np.zeros((len(epsilons), nsteps))
+        mean_opt_actions = np.zeros((len(epsilons), nsteps))
+
+        alpha = exp_config.get('alpha', None)
+
+        for e in range(len(epsilons)):
+            print(f"Epsilon={epsilons[e]}")
+            rewards, optimal_actions = np.zeros((nruns, nsteps)), np.zeros((nruns, nsteps))
+            bandits = KArmedBandits(_NBANDITS, stationary=stationary, seed=_ROOT_SEED+1, steps=nsteps)
+            for i in range(nruns):
+                bandits.reset() # pick fresh reward set each run
+                _, rewards[i], optimal_actions[i] = run_simple_bandit(bandits, nsteps, epsilons[e], alpha, seed=_ROOT_SEED+i+2)
+            
+            mean_rewards[e] = rewards.mean(axis=0)
+            mean_opt_actions[e] = optimal_actions.mean(axis=0)
+            results[f"{exp_key} {method} eps={epsilons[e]}"] = (mean_rewards[e], mean_opt_actions[e])
+
+    print("Simulation complete!")
+    fig_path = "10_armed_bandits_" + ("stationary" if stationary else "non_stationary")
+    plot_fig22(results, title=f"{nruns} runs, {nsteps} steps", path=fig_path)
 
 
 if __name__ == '__main__':
-    _NBANDITS = 10 # number of bandit machines
-    _ROOT_SEED = 39 # for repeatability
     # Create bandits
     bandits = KArmedBandits(_NBANDITS, seed=_ROOT_SEED+1)
     print(f"Actual rewards for {_NBANDITS} bandits: \n q_*(a)={bandits.q_bandits}")
@@ -140,7 +196,7 @@ if __name__ == '__main__':
         mean_opt_actions[e] = optimal_actions.mean(axis=0)
 
     print("Simulation complete!")
-    plot_fig22(mean_rewards, mean_opt_actions, [f"eps={e}" for e in epsilons],
+    plot_fig22({f"eps={e}": (mean_rewards[i], mean_opt_actions[i]) for i, e in enumerate(epsilons)},
                title=f"{_RUNS} runs, {_STEPS} steps", path="fig22.png")
     # Ex 2.5
     # Exercise 2.5 (programming) Design and conduct an experiment to demonstrate the diffculties 
@@ -150,6 +206,24 @@ if __name__ == '__main__':
     # standard deviation 0.01 to all the q⇤(a) on each step). Prepare plots like Figure 2.2 for 
     # an action-value method using sample averages, incrementally computed, and another action-value 
     # method using a constant step-size parameter, ↵ = 0.1. Use " = 0.1 and longer runs, say of 10,000 steps.
+    run_configs = {
+        "exp_1":{
+            "method":"sampled_average",     # to_do: change it into enums 
+            "stationary":False,
+            "epsilons": [0.1],
+            "steps":10_000,
+            "runs" :2000
+        },
+        "exp_2":{
+            "method":"constant_stepsize",     # to_do: change it into enums 
+            "stationary":False,
+            "epsilons": [0.1],
+            "alpha" : 0.1,
+            "steps":10_000,
+            "runs" :2000
+        }
 
-    
+    }
+
+    ten_armbandits_testbed(run_configs)
     
